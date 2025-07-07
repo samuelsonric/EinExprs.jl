@@ -1,4 +1,4 @@
-using CliqueTrees: MF, MMD, ND, SafeRules, KaHyParND, METISND
+using CliqueTrees: MF, AMF, MMD, NDS, SafeRules, BestWidth, KaHyParND, METISND
 
 """
     HyPar(dis, algs;
@@ -41,7 +41,7 @@ end
 
 function HyPar(
     dis::D = KaHyParND(),
-    algs::A = (MF(), MMD());
+    algs::A = (MF(), AMF(), MMD());
     level::Integer = 6,
     width::Integer = 120,
     imbalances::AbstractRange = 130:130,
@@ -57,26 +57,11 @@ end
 
 function EinExprs.einexpr(config::HyPar, path)
     dis = config.dis
-    algs = config.algs
+    alg = BestWidth(config.algs)
     level = config.level
     width = config.width
     imbalances = config.imbalances
-
-    minpath = nothing;
-    minscore = typemax(Float64)
-
-    for alg in algs, imbalance in imbalances
-        curconfig = LineGraph(SafeRules(ND(alg, dis; level, width, imbalance)))
-
-        curpath = einexpr(curconfig, path)
-        curscore = score(curpath)
-
-        if curscore < minscore
-            minpath, minscore = curpath, curscore
-        end
-    end
-
-    return minpath
+    return einexpr(LineGraph(SafeRules(NDS(alg, dis; level, width, imbalances))), path)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", config::HyPar{D,A}) where {D,A}
